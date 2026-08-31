@@ -13,8 +13,12 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Initialize database tables
-logger.info("Initializing relational database tables...")
-Base.metadata.create_all(bind=engine)
+try:
+    logger.info("Initializing relational database tables...")
+    Base.metadata.create_all(bind=engine)
+except Exception as e:
+    logger.error(f"Failed to initialize database tables: {e}")
+
 
 # Seed database with baseline records
 def seed_database():

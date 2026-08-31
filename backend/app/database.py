@@ -8,8 +8,14 @@ connect_args = {}
 if settings.DATABASE_URL.startswith("sqlite"):
     connect_args = {"check_same_thread": False}
 
+# Ensure postgres URLs have sslmode=require for Render
+db_url = settings.DATABASE_URL
+if db_url.startswith("postgres") and "sslmode" not in db_url:
+    join_char = "&" if "?" in db_url else "?"
+    db_url += f"{join_char}sslmode=require"
+
 engine = create_engine(
-    settings.DATABASE_URL,
+    db_url,
     connect_args=connect_args
 )
 
