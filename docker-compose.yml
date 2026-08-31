@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:///../database/brain_tumor.db
+      - JWT_SECRET=change_me_to_something_very_secret_and_long_neuroscan_9821
+      - AI_MODE=demo
+      - CLASSIFIER_MODEL_PATH=../models/brain_tumor_classifier.pth
+      - SEGMENTATION_MODEL_PATH=../models/brain_tumor_unet.pth
+    volumes:
+      - uploads_data:/workspace/uploads
+      - database_data:/workspace/database
+      - models_data:/workspace/models
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000/api
+    depends_on:
+      - backend
+    restart: always
+
+volumes:
+  uploads_data:
+    driver: local
+  database_data:
+    driver: local
+  models_data:
+    driver: local
