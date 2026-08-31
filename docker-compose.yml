@@ -1,6 +1,18 @@
 version: '3.8'
 
 services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: neuroscan
+      POSTGRES_PASSWORD: neuroscan_password
+      POSTGRES_DB: neuroscan_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: always
+
   backend:
     build:
       context: ./backend
@@ -8,16 +20,19 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=sqlite:///../database/brain_tumor.db
-      - JWT_SECRET=change_me_to_something_very_secret_and_long_neuroscan_9821
+      - DATABASE_URL=postgresql://neuroscan:neuroscan_password@db:5432/neuroscan_db
+      - JWT_SECRET=dev_secret_key_only_change_in_production
       - AI_MODE=demo
       - CLASSIFIER_MODEL_PATH=../models/brain_tumor_classifier.pth
       - SEGMENTATION_MODEL_PATH=../models/brain_tumor_unet.pth
     volumes:
       - uploads_data:/workspace/uploads
-      - database_data:/workspace/database
       - models_data:/workspace/models
+    depends_on:
+      - db
     restart: always
+    command: >
+      sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
 
   frontend:
     build:
@@ -34,7 +49,7 @@ services:
 volumes:
   uploads_data:
     driver: local
-  database_data:
-    driver: local
   models_data:
+    driver: local
+  pgdata:
     driver: local

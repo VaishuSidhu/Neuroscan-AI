@@ -104,6 +104,10 @@ app.include_router(admin.router, prefix="/api")
 app.include_router(files.router, prefix="/api")
 app.include_router(performance.router, prefix="/api")
 
+@app.get("/api/health")
+def health_check():
+    return {"status": "ok"}
+
 @app.get("/")
 def read_root():
     return {

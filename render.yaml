@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: neuroscan-backend
+    env: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt && alembic upgrade head
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DATABASE_URL
+        fromDatabase:
+          name: neuroscan-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: AI_MODE
+        value: demo
+      - key: CORS_ORIGINS
+        value: "https://neuroscan-frontend.onrender.com" # Replace with actual frontend URL
+
+  - type: web
+    name: neuroscan-frontend
+    env: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: NODE_VERSION
+        value: 18.0.0
+      - key: VITE_API_BASE_URL
+        fromService:
+          type: web
+          name: neuroscan-backend
+          property: host
+        # The frontend will hit https://neuroscan-backend.onrender.com/api (axiosInstance appends /api)
+
+databases:
+  - name: neuroscan-db
+    databaseName: neuroscan
+    user: neuroscan
+    plan: free

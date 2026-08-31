@@ -4,7 +4,7 @@ from typing import List
 
 class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///../database/brain_tumor.db"
-    JWT_SECRET: str = "change_me_to_something_very_secret_and_long_neuroscan_9821"
+    JWT_SECRET: str = "dev_secret_key_only_change_in_production"
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 480
     AI_MODE: str = "demo"
