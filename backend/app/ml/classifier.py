@@ -3,6 +3,7 @@ import cv2
 import random
 import logging
 import numpy as np
+from PIL import Image
 from ..config import settings
 from .model_loader import model_loader
 
@@ -18,7 +19,64 @@ def classify_mri(file_path: str, original_filename: str) -> dict:
     if settings.AI_MODE == "production":
         # Production PyTorch classification execution
         logger.info("Executing PyTorch model classification...")
-        raise NotImplementedError("Production model inference not wired. Set AI_MODE=demo.")
+        
+        import torch
+        from torchvision import transforms
+        
+        model = model_loader.classifier
+        device = model_loader.device
+        
+        # Standard ImageNet Transforms
+        preprocess = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize(
+                mean=[0.485, 0.456, 0.406],
+                std=[0.229, 0.224, 0.225]
+            )
+        ])
+        
+        try:
+            # Load image using PIL (handles different encodings better for torch)
+            img = Image.open(file_path).convert('RGB')
+            input_tensor = preprocess(img)
+            input_batch = input_tensor.unsqueeze(0).to(device)
+            
+            with torch.no_grad():
+                output = model(input_batch)
+                probs_tensor = torch.nn.functional.softmax(output[0], dim=0)
+            
+            # Map index to class names
+            raw_probs = probs_tensor.cpu().numpy()
+            
+            # Use class mapping from the loader
+            class_names = model_loader.class_names
+            class_display = model_loader.class_display
+            
+            probs = {}
+            for i, c_key in enumerate(class_names):
+                disp_name = class_display.get(c_key, c_key)
+                probs[disp_name] = round(float(raw_probs[i]), 3)
+                
+            # Get highest probability
+            max_idx = np.argmax(raw_probs)
+            predicted_class_key = class_names[max_idx]
+            predicted_class = class_display.get(predicted_class_key, predicted_class_key)
+            conf = probs[predicted_class]
+            
+            logger.info(f"PyTorch Analysis completed: predicted {predicted_class} (conf: {conf})")
+            
+            return {
+                "predicted_class": predicted_class,
+                "confidence": conf,
+                "probabilities": probs,
+                "model_name": "DenseNet121",
+                "model_version": "v1.2",
+                "mode": "production"
+            }
+        except Exception as e:
+            logger.error(f"PyTorch inference failed: {str(e)}")
+            raise RuntimeError(f"Model inference failed: {str(e)}")
     
     # 1. Read the uploaded file to analyze pixel intensities
     img = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)

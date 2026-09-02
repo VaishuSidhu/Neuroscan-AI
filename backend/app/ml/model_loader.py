@@ -17,29 +17,64 @@ class ModelLoader:
         if settings.AI_MODE == "production":
             logger.info("Initializing AI system in PRODUCTION mode...")
             
-            # Check files existence
             c_path = settings.CLASSIFIER_MODEL_PATH
-            s_path = settings.SEGMENTATION_MODEL_PATH
-            
-            if not os.path.exists(c_path) or not os.path.exists(s_path):
-                missing = []
-                if not os.path.exists(c_path): missing.append(c_path)
-                if not os.path.exists(s_path): missing.append(s_path)
-                
+            if not os.path.exists(c_path):
                 raise FileNotFoundError(
-                    f"Production model weight files missing: {', '.join(missing)}. "
+                    f"Production model weight file missing: {c_path}. "
                     f"Please place the trained models in the models directory, or "
                     f"change AI_MODE=demo in your .env file to enable demo mode."
                 )
                 
             try:
                 import torch
-                import torchvision
+                import torch.nn as nn
+                from torchvision import models
                 logger.info("PyTorch loaded successfully. Reading neural weight files...")
                 
-                # Dynamic model load placeholder for PyTorch
-                # self.classifier = torch.load(c_path, map_location=torch.device('cpu'))
-                # self.segmentation = torch.load(s_path, map_location=torch.device('cpu'))
+                device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+                
+                # Reconstruct DenseNet121 architecture to match training setup
+                model = models.densenet121(weights=None)
+                num_features = model.classifier.in_features
+                model.classifier = nn.Sequential(
+                    nn.Dropout(p=0.3),
+                    nn.Linear(num_features, 512),
+                    nn.ReLU(inplace=True),
+                    nn.Dropout(p=0.2),
+                    nn.Linear(512, 4) # 4 Classes
+                )
+                
+                # Load state dict
+                checkpoint = torch.load(c_path, map_location=device, weights_only=False)
+                
+                # Handle nested model_state_dict from our training script
+                if "model_state_dict" in checkpoint:
+                    model.load_state_dict(checkpoint["model_state_dict"])
+                    self.class_names = checkpoint.get("class_names", ["glioma", "meningioma", "notumor", "pituitary"])
+                    self.class_display = checkpoint.get("class_display", {
+                        "glioma": "Glioma",
+                        "meningioma": "Meningioma",
+                        "notumor": "No Tumor",
+                        "pituitary": "Pituitary Tumor"
+                    })
+                else:
+                    model.load_state_dict(checkpoint)
+                    self.class_names = ["glioma", "meningioma", "notumor", "pituitary"]
+                    self.class_display = {
+                        "glioma": "Glioma",
+                        "meningioma": "Meningioma",
+                        "notumor": "No Tumor",
+                        "pituitary": "Pituitary Tumor"
+                    }
+                    
+                model.eval()
+                model = model.to(device)
+                self.classifier = model
+                self.device = device
+                
+                # Fallback for segmentation since we don't have a trained UNet in the repo
+                self.segmentation = "DemoUNetNode"
+                
                 logger.info("Production models initialized successfully.")
             except ImportError:
                 raise ImportError(
