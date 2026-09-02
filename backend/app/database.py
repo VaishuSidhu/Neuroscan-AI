@@ -8,9 +8,13 @@ connect_args = {}
 if settings.DATABASE_URL.startswith("sqlite"):
     connect_args = {"check_same_thread": False}
 
-# Ensure postgres URLs have sslmode=require for Render
+# Render uses postgres:// but SQLAlchemy requires postgresql://
 db_url = settings.DATABASE_URL
-if db_url.startswith("postgres") and "sslmode" not in db_url:
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+
+# Ensure postgres URLs have sslmode=require for Render
+if db_url.startswith("postgresql") and "sslmode" not in db_url:
     join_char = "&" if "?" in db_url else "?"
     db_url += f"{join_char}sslmode=require"
 
