@@ -17,7 +17,7 @@ services:
       - key: AI_MODE
         value: demo
       - key: CORS_ORIGINS
-        value: "https://neuroscan-frontend.onrender.com" 
+        value: "*" 
 
   - type: web
     name: neuroscan-frontend
