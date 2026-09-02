@@ -24,13 +24,17 @@ export const Register: React.FC<RegisterProps> = ({ setPath }) => {
     setError('');
     setLoading(true);
 
-    setTimeout(() => {
-      register(name, email, role);
+    setTimeout(async () => {
+      const success = await register(name, email, role, password);
       setLoading(false);
-      if (role === 'Admin') {
-        setPath('#/admin');
+      if (success) {
+        if (role === 'Admin') {
+          setPath('#/admin');
+        } else {
+          setPath('#/dashboard');
+        }
       } else {
-        setPath('#/dashboard');
+        setError('Registration failed. This email might already be in use.');
       }
     }, 1000);
   };
