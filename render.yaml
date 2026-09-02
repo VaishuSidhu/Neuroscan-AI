@@ -23,7 +23,7 @@ services:
     name: neuroscan-frontend
     env: static
     rootDir: frontend
-    buildCommand: yarn install && yarn build
+    buildCommand: npm install && npm run build
     staticPublishPath: dist
     envVars:
       - key: NODE_VERSION
