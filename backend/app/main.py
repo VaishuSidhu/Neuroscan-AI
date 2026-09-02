@@ -2,15 +2,16 @@ import os
 import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .config import settings
-from .database import engine, Base, SessionLocal
-from .models.database_models import User, Patient, MLModel
-from .auth.auth_handler import get_password_hash
-try:
-    from .routers import auth, patients, mri, analysis, reports, models, admin, files, performance
+# Setup Logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-    # Initialize database tables
-    logger.info("Initializing relational database tables...")
+try:
+    from .config import settings
+    from .database import engine, Base, SessionLocal
+    from .models.database_models import User, Patient, MLModel
+    from .auth.auth_handler import get_password_hash
+    from .routers import auth, patients, mri, analysis, reports, models, admin, files, performance
     Base.metadata.create_all(bind=engine)
     
     # Seed database with baseline records
