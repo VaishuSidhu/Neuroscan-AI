@@ -23,11 +23,15 @@ export const AnalysisProcess: React.FC<AnalysisProcessProps> = ({
     }
   }, [isAnalyzing, activePredictionId]);
 
-  // Safety check: if no scan is running and activePredictionId is missing, redirect back
+  // Safety check: only redirect back if analysis has never started (no scan, no prediction, not analyzing)
+  // Use a small delay to avoid race condition on initial mount before uploadAndAnalyze sets isAnalyzing=true
   useEffect(() => {
-    if (!isAnalyzing && !activePredictionId && !selectedScanId) {
-      setPath('#/analysis');
-    }
+    const timer = setTimeout(() => {
+      if (!isAnalyzing && !activePredictionId && !selectedScanId) {
+        setPath('#/analysis');
+      }
+    }, 2000); // 2 second grace window for the pipeline to start
+    return () => clearTimeout(timer);
   }, [isAnalyzing, activePredictionId, selectedScanId]);
 
   const pipelineSteps = [
