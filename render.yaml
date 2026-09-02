@@ -28,6 +28,8 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 22.14.0
+      - key: VITE_API_BASE_URL
+        value: https://neuroscan-backend-zqas.onrender.com
 
 databases:
   - name: neuroscan-db
