@@ -23,7 +23,7 @@ services:
     name: neuroscan-frontend
     env: static
     rootDir: frontend
-    buildCommand: rm -rf package-lock.json node_modules && npm install && npm run build
+    buildCommand: yarn install && yarn build
     staticPublishPath: dist
     envVars:
       - key: NODE_VERSION
