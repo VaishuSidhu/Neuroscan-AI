@@ -8,65 +8,29 @@ logger = logging.getLogger(__name__)
 
 def generate_gradcam(file_path: str, predicted_class: str, prediction_id: str) -> dict:
     """
-    Generate Grad-CAM heatmaps.
-    In demo mode, uses OpenCV image processing to overlay a localized radial thermal map.
+    Generate authentic Grad-CAM heatmaps using PyTorch hooks on DenseNet121.
     """
-    # Outputs paths
+    import torch
+    import torch.nn.functional as F
+    from torchvision import transforms
+    from PIL import Image
+    from .model_loader import model_loader
+    
     gradcam_dir = os.path.join("uploads", "gradcam")
     os.makedirs(gradcam_dir, exist_ok=True)
 
-    # Unique filenames
     heatmap_filename = f"heatmap_{prediction_id}.jpg"
     overlay_filename = f"overlay_{prediction_id}.jpg"
     
     heatmap_path = os.path.join(gradcam_dir, heatmap_filename)
     overlay_path = os.path.join(gradcam_dir, overlay_filename)
 
-    # Load original MRI
+    # Load original image for overlay
     img = cv2.imread(file_path)
     if img is None:
         raise ValueError(f"Could not read uploaded MRI scan at {file_path}")
         
-    h, w, c = img.shape
-
-    # Heuristic coordinates: Default to center of image
-    tx, ty, tr = w // 2, h // 2, w // 8
-    
-    # Try to detect actual brightest zone (representing hyperintense tumor tissue)
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    blurred = cv2.GaussianBlur(gray, (9, 9), 0)
-    _, thresh = cv2.threshold(blurred, 160, 255, cv2.THRESH_BINARY)
-    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    
-    detected_tumor = False
-    if contours:
-        largest = max(contours, key=cv2.contourArea)
-        if cv2.contourArea(largest) > 180:
-            M = cv2.moments(largest)
-            if M["m00"] > 0:
-                tx = int(M["m10"] / M["m00"])
-                ty = int(M["m01"] / M["m00"])
-                tr = int(np.sqrt(cv2.contourArea(largest) / np.pi))
-                detected_tumor = True
-
-    # Fallback to class-specific locations if no bright spot was resolved but tumor predicted
-    if not detected_tumor and predicted_class != "No Tumor":
-        if predicted_class == "Glioma":
-            tx = int(w * 0.65)
-            ty = int(h * 0.45)
-            tr = int(w * 0.12)
-        elif predicted_class == "Meningioma":
-            tx = int(w * 0.35)
-            ty = int(h * 0.52)
-            tr = int(w * 0.10)
-        elif predicted_class == "Pituitary Tumor":
-            tx = int(w * 0.50)
-            ty = int(h * 0.58)
-            tr = int(w * 0.06)
-    
-    # 1. Create solid base copy of original scan
     if predicted_class == "No Tumor":
-        # Save blank dark heatmap and clean overlay
         cv2.imwrite(heatmap_path, np.zeros_like(img))
         cv2.imwrite(overlay_path, img)
         return {
@@ -75,39 +39,87 @@ def generate_gradcam(file_path: str, predicted_class: str, prediction_id: str) -
             "overlay_image": f"/api/files/gradcam/{overlay_filename}"
         }
 
-    # 2. Build radial activation mask
-    mask = np.zeros((h, w), dtype=np.float32)
-    
-    # Generate linear distance-based radial falloff
-    for y in range(h):
-        for x in range(w):
-            dist = np.sqrt((x - tx)**2 + (y - ty)**2)
-            if dist < tr * 1.5:
-                # Radial gradient decay
-                val = 1.0 - (dist / (tr * 1.5))
-                mask[y, x] = max(0, val)
-                
-    # Smooth the mask
-    mask = cv2.GaussianBlur(mask, (15, 15), 0)
-    
-    # Convert mask to 0-255 range
-    mask_255 = (mask * 255).astype(np.uint8)
-    
-    # Apply JET colormap to make it a colored heatmap (RGB)
-    heatmap_colored = cv2.applyColorMap(mask_255, cv2.COLORMAP_JET)
-    
-    # Save the standalone colored heatmap
-    cv2.imwrite(heatmap_path, heatmap_colored)
+    try:
+        model = model_loader.classifier
+        device = model_loader.device
+        model.eval()
 
-    # 3. Blend colored heatmap with original grayscale image
-    # original image has 3 channels, heatmap_colored has 3 channels
-    alpha = 0.4
-    overlay_img = cv2.addWeighted(heatmap_colored, alpha, img, 1 - alpha, 0)
-    
-    # Save overlay image
-    cv2.imwrite(overlay_path, overlay_img)
+        img_pil = Image.open(file_path).convert('RGB')
+        preprocess = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        ])
+        input_tensor = preprocess(img_pil).unsqueeze(0).to(device)
 
-    logger.info(f"Grad-CAM overlays successfully written for prediction: {prediction_id}")
+        # Hook into DenseNet121 features
+        gradients = []
+        activations = []
+
+        def backward_hook(module, grad_input, grad_output):
+            gradients.append(grad_output[0])
+            
+        def forward_hook(module, input, output):
+            activations.append(output)
+
+        target_layer = model.features
+        h1 = target_layer.register_forward_hook(forward_hook)
+        h2 = target_layer.register_full_backward_hook(backward_hook)
+
+        # Forward pass
+        output = model(input_tensor)
+        
+        class_names = model_loader.class_names
+        class_display = model_loader.class_display
+        
+        class_idx = 0
+        for i, c_key in enumerate(class_names):
+            if class_display.get(c_key, c_key) == predicted_class:
+                class_idx = i
+                break
+
+        # Backward pass
+        model.zero_grad()
+        target = output[0][class_idx]
+        target.backward()
+
+        # Compute Grad-CAM
+        gradient = gradients[0].cpu().data.numpy()[0]
+        activation = activations[0].cpu().data.numpy()[0]
+        
+        weights = np.mean(gradient, axis=(1, 2))
+        cam = np.zeros(activation.shape[1:], dtype=np.float32)
+
+        for i, w in enumerate(weights):
+            cam += w * activation[i]
+
+        cam = np.maximum(cam, 0)
+        cam = cv2.resize(cam, (img.shape[1], img.shape[0]))
+        
+        cam_max = np.max(cam)
+        if cam_max != 0:
+            cam = cam / cam_max
+            
+        # Clean hooks
+        h1.remove()
+        h2.remove()
+        
+        # Color and Overlay
+        cam_255 = np.uint8(255 * cam)
+        heatmap_colored = cv2.applyColorMap(cam_255, cv2.COLORMAP_JET)
+        cv2.imwrite(heatmap_path, heatmap_colored)
+        
+        alpha = 0.4
+        overlay_img = cv2.addWeighted(heatmap_colored, alpha, img, 1 - alpha, 0)
+        cv2.imwrite(overlay_path, overlay_img)
+        
+        logger.info(f"Authentic Grad-CAM generated for prediction: {prediction_id}")
+        
+    except Exception as e:
+        logger.error(f"Grad-CAM hook failure: {str(e)}")
+        # Fallback to copy image if PyTorch hooks fail
+        cv2.imwrite(heatmap_path, np.zeros_like(img))
+        cv2.imwrite(overlay_path, img)
 
     return {
         "original_image": f"/api/files/mri/{os.path.basename(file_path)}",

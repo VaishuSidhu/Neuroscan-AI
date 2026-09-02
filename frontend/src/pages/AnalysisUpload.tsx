@@ -29,33 +29,8 @@ export const AnalysisUpload: React.FC<AnalysisUploadProps> = ({ setPath, setSele
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState('');
 
-  // Helper: Convert base64 data to File object for upload
-  const dataURLtoFile = (dataurl: string, filename: string) => {
-    const arr = dataurl.split(',');
-    const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png';
-    const bstr = atob(arr[1]);
-    let n = bstr.length;
-    const u8arr = new Uint8Array(n);
-    while (n--) {
-      u8arr[n] = bstr.charCodeAt(n);
-    }
-    return new File([u8arr], filename, { type: mime });
-  };
-
-  // Raw SVG Brain slice templates for Demo Presets (in base64 format for atob processing)
-  const base64Slices = {
-    normal: 'iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAIAAADTED8xAAADdklEQVR4Ae3BAQEAAACCoHrj/4UNSSgQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivRr+4nkBqhimFgAAAABJRU5ErkJggg==',
-    glioma: 'iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAIAAADTED8xAAADdklEQVR4Ae3BAQEAAACCoHrj/4UNSSgQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivRr+4nkBqhimFgAAAABJRU5ErkJggg==',
-    meningioma: 'iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAIAAADTED8xAAADdklEQVR4Ae3BAQEAAACCoHrj/4UNSSgQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivRr+4nkBqhimFgAAAABJRU5ErkJggg==',
-    pituitary: 'iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAIAAADTED8xAAADdklEQVR4Ae3BAQEAAACCoHrj/4UNSSgQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivSoQ6VWBSK8KRHpVINKrApFeFYj0qkCkVwUivRr+4nkBqhimFgAAAABJRU5ErkJggg=='
-  };
-
-  // We can write simple gray circles representing slices in base64
-  const demoSlices = {
-    normal: `data:image/png;base64,${base64Slices.normal}`,
-    glioma: `data:image/png;base64,${base64Slices.glioma}`,
-    meningioma: `data:image/png;base64,${base64Slices.meningioma}`,
-    pituitary: `data:image/png;base64,${base64Slices.pituitary}`
+  const triggerUpload = () => {
+    fileInputRef.current?.click();
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -74,29 +49,6 @@ export const AnalysisUpload: React.FC<AnalysisUploadProps> = ({ setPath, setSele
       setError('');
     };
     reader.readAsDataURL(file);
-  };
-
-  const handleDemoPreset = (type: 'normal' | 'glioma' | 'meningioma' | 'pituitary') => {
-    const dataUrl = demoSlices[type];
-    const filename = `demo_mri_${type}.png`;
-    const fileObj = dataURLtoFile(dataUrl, filename);
-
-    setImagePreview(dataUrl);
-    setActiveFile(fileObj);
-    setFileDetails({
-      name: filename,
-      size: '24.5 KB',
-      type: 'image/png'
-    });
-    setError('');
-    
-    if (type === 'pituitary') setScanType('Coronal T1c');
-    else if (type === 'glioma') setScanType('FLAIR');
-    else setScanType('Axial T2');
-  };
-
-  const triggerUpload = () => {
-    fileInputRef.current?.click();
   };
 
   const removeImage = () => {
@@ -139,7 +91,7 @@ export const AnalysisUpload: React.FC<AnalysisUploadProps> = ({ setPath, setSele
 
     // 2. Image File Validation
     if (!activeFile) {
-      setError('Please upload a brain MRI scan or select a demo preset.');
+      setError('Please upload a genuine brain MRI scan (.png/.jpg/.jpeg).');
       return;
     }
 
@@ -351,46 +303,7 @@ export const AnalysisUpload: React.FC<AnalysisUploadProps> = ({ setPath, setSele
             </div>
           )}
 
-          {/* Demo Presets Selector Panel */}
-          <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-3.5">
-            <span className="text-[9px] font-bold text-slate-500 tracking-wider uppercase block mb-2.5">
-              Demonstration MRI Presets (Instantly Fill Workspace)
-            </span>
-            <div className="grid grid-cols-2 gap-2 text-left">
-              <button
-                type="button"
-                onClick={() => handleDemoPreset('normal')}
-                className="p-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-[10px] font-medium text-slate-700 transition-all flex items-center space-x-2"
-              >
-                <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block shrink-0"></span>
-                <span className="truncate">Normal Brain FLAIR</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDemoPreset('glioma')}
-                className="p-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-[10px] font-medium text-slate-700 transition-all flex items-center space-x-2"
-              >
-                <span className="w-3 h-3 rounded-full bg-red-500 inline-block shrink-0"></span>
-                <span className="truncate">Glioma Preset Scan</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDemoPreset('meningioma')}
-                className="p-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-[10px] font-medium text-slate-700 transition-all flex items-center space-x-2"
-              >
-                <span className="w-3 h-3 rounded-full bg-orange-500 inline-block shrink-0"></span>
-                <span className="truncate">Meningioma T2</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDemoPreset('pituitary')}
-                className="p-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-[10px] font-medium text-slate-700 transition-all flex items-center space-x-2"
-              >
-                <span className="w-3 h-3 rounded-full bg-blue-500 inline-block shrink-0"></span>
-                <span className="truncate">Pituitary Coronal</span>
-              </button>
-            </div>
-          </div>
+
         </div>
 
       </form>
