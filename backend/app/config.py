@@ -8,8 +8,8 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 480
     AI_MODE: str = "demo"
-    CLASSIFIER_MODEL_PATH: str = "../models/brain_tumor_classifier.pth"
-    SEGMENTATION_MODEL_PATH: str = "../models/brain_tumor_unet.pth"
+    CLASSIFIER_MODEL_PATH: str = "./models/brain_tumor_classifier.pth"
+    SEGMENTATION_MODEL_PATH: str = "./models/brain_tumor_unet.pth"
     CORS_ORIGINS: str = "http://localhost:5173,http://localhost:8000"
 
     @property

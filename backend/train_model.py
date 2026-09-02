@@ -38,7 +38,7 @@ IMAGE_SIZE = 224       # DenseNet121 standard input
 TRAIN_SPLIT = 0.85     # 85% train, 15% validation
 NUM_WORKERS = 0        # Windows compatibility
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent
 MODELS_DIR = PROJECT_ROOT / "models"
 DATA_DIR = PROJECT_ROOT / "dataset"
 CLASSIFIER_SAVE_PATH = MODELS_DIR / "brain_tumor_classifier.pth"
