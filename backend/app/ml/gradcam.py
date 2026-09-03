@@ -52,19 +52,16 @@ def generate_gradcam(file_path: str, predicted_class: str, prediction_id: str) -
         ])
         input_tensor = preprocess(img_pil).unsqueeze(0).to(device)
 
-        # Hook into DenseNet121 features
+        # Hook into DenseNet121 features.norm5
         gradients = []
         activations = []
 
-        def backward_hook(module, grad_input, grad_output):
-            gradients.append(grad_output[0])
-            
         def forward_hook(module, input, output):
             activations.append(output)
+            output.register_hook(lambda grad: gradients.append(grad))
 
-        target_layer = model.features
+        target_layer = model.features.norm5
         h1 = target_layer.register_forward_hook(forward_hook)
-        h2 = target_layer.register_full_backward_hook(backward_hook)
 
         # Forward pass
         output = model(input_tensor)
@@ -100,9 +97,12 @@ def generate_gradcam(file_path: str, predicted_class: str, prediction_id: str) -
         if cam_max != 0:
             cam = cam / cam_max
             
-        # Clean hooks
+        # Clean hooks and memory
         h1.remove()
-        h2.remove()
+        model.zero_grad()
+        del gradients, activations, output, target, input_tensor
+        import gc
+        gc.collect()
         
         # Color and Overlay
         cam_255 = np.uint8(255 * cam)
@@ -120,9 +120,11 @@ def generate_gradcam(file_path: str, predicted_class: str, prediction_id: str) -
         # Fallback to copy image if PyTorch hooks fail
         cv2.imwrite(heatmap_path, np.zeros_like(img))
         cv2.imwrite(overlay_path, img)
+        cam = np.zeros((img.shape[0], img.shape[1]), dtype=np.float32)
 
-    return {
+    res = {
         "original_image": f"/api/files/mri/{os.path.basename(file_path)}",
         "heatmap_image": f"/api/files/gradcam/{heatmap_filename}",
         "overlay_image": f"/api/files/gradcam/{overlay_filename}"
     }
+    return res, cam

@@ -67,10 +67,10 @@ def run_ai_pipeline(db: Session, scan_id: int) -> dict:
         pred_id_str = f"pr_{pred_record.id}"
         
         logger.info(f"Generating Grad-CAM overlays for prediction: {pred_id_str}")
-        cam_result = generate_gradcam(scan.file_path, predicted_class, pred_id_str)
+        cam_result, cam_array = generate_gradcam(scan.file_path, predicted_class, pred_id_str)
         
         logger.info(f"Generating UNet boundary segmentation overlays for prediction: {pred_id_str}")
-        seg_result = generate_segmentation(scan.file_path, predicted_class, pred_id_str)
+        seg_result = generate_segmentation(scan.file_path, predicted_class, pred_id_str, cam_input=cam_array)
 
         # 6. Save Explainability Results to DB
         exp_record = ExplainabilityResult(

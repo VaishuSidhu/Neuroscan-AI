@@ -6,7 +6,7 @@ from ..config import settings
 
 logger = logging.getLogger(__name__)
 
-def generate_segmentation(file_path: str, predicted_class: str, prediction_id: str) -> dict:
+def generate_segmentation(file_path: str, predicted_class: str, prediction_id: str, cam_input: np.ndarray = None) -> dict:
     """
     Generate tumor segmentation overlays and masks using Weakly Supervised Saliency mapping 
     from the PyTorch model's true activations.
@@ -43,64 +43,67 @@ def generate_segmentation(file_path: str, predicted_class: str, prediction_id: s
         }
 
     try:
-        model = model_loader.classifier
-        device = model_loader.device
-        model.eval()
+        if cam_input is not None:
+            cam = cam_input
+        else:
+            model = model_loader.classifier
+            device = model_loader.device
+            model.eval()
 
-        img_pil = Image.open(file_path).convert('RGB')
-        preprocess = transforms.Compose([
-            transforms.Resize((224, 224)),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        ])
-        input_tensor = preprocess(img_pil).unsqueeze(0).to(device)
+            img_pil = Image.open(file_path).convert('RGB')
+            preprocess = transforms.Compose([
+                transforms.Resize((224, 224)),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+            ])
+            input_tensor = preprocess(img_pil).unsqueeze(0).to(device)
 
-        gradients = []
-        activations = []
+            gradients = []
+            activations = []
 
-        def backward_hook(module, grad_input, grad_output):
-            gradients.append(grad_output[0])
+            def forward_hook(module, input, output):
+                activations.append(output)
+                output.register_hook(lambda grad: gradients.append(grad))
+
+            target_layer = model.features.norm5
+            h1 = target_layer.register_forward_hook(forward_hook)
+
+            output = model(input_tensor)
             
-        def forward_hook(module, input, output):
-            activations.append(output)
-
-        target_layer = model.features
-        h1 = target_layer.register_forward_hook(forward_hook)
-        h2 = target_layer.register_full_backward_hook(backward_hook)
-
-        output = model(input_tensor)
-        
-        class_names = model_loader.class_names
-        class_display = model_loader.class_display
-        
-        class_idx = 0
-        for i, c_key in enumerate(class_names):
-            if class_display.get(c_key, c_key) == predicted_class:
-                class_idx = i
-                break
-
-        model.zero_grad()
-        target = output[0][class_idx]
-        target.backward()
-
-        gradient = gradients[0].cpu().data.numpy()[0]
-        activation = activations[0].cpu().data.numpy()[0]
-        
-        weights = np.mean(gradient, axis=(1, 2))
-        cam = np.zeros(activation.shape[1:], dtype=np.float32)
-
-        for i, w in enumerate(weights):
-            cam += w * activation[i]
-
-        cam = np.maximum(cam, 0)
-        cam = cv2.resize(cam, (img.shape[1], img.shape[0]))
-        
-        cam_max = np.max(cam)
-        if cam_max != 0:
-            cam = cam / cam_max
+            class_names = model_loader.class_names
+            class_display = model_loader.class_display
             
-        h1.remove()
-        h2.remove()
+            class_idx = 0
+            for i, c_key in enumerate(class_names):
+                if class_display.get(c_key, c_key) == predicted_class:
+                    class_idx = i
+                    break
+
+            model.zero_grad()
+            target = output[0][class_idx]
+            target.backward()
+
+            gradient = gradients[0].cpu().data.numpy()[0]
+            activation = activations[0].cpu().data.numpy()[0]
+            
+            weights = np.mean(gradient, axis=(1, 2))
+            cam = np.zeros(activation.shape[1:], dtype=np.float32)
+
+            for i, w in enumerate(weights):
+                cam += w * activation[i]
+
+            cam = np.maximum(cam, 0)
+            cam = cv2.resize(cam, (img.shape[1], img.shape[0]))
+            
+            cam_max = np.max(cam)
+            if cam_max != 0:
+                cam = cam / cam_max
+                
+            h1.remove()
+            model.zero_grad()
+            del gradients, activations, output, target, input_tensor
+            import gc
+            gc.collect()
         
         # Saliency Thresholding for Weakly-Supervised Segmentation
         # Only take pixels that are highly activated (top 40%)
