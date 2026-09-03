@@ -8,6 +8,18 @@ class ModelLoader:
     def __init__(self):
         self.classifier = None
         self.segmentation = None
+        self.device = "cpu"
+        self.class_names = ["glioma_tumor", "meningioma_tumor", "no_tumor", "pituitary_tumor"]
+        self.class_display = {
+            "glioma": "Glioma",
+            "glioma_tumor": "Glioma",
+            "meningioma": "Meningioma",
+            "meningioma_tumor": "Meningioma",
+            "notumor": "No Tumor",
+            "no_tumor": "No Tumor",
+            "pituitary": "Pituitary Tumor",
+            "pituitary_tumor": "Pituitary Tumor"
+        }
         self.initialized = False
         
     def load_models(self):
@@ -42,6 +54,7 @@ class ModelLoader:
                 from torchvision import models
                 logger.info(f"PyTorch loaded successfully. Reading neural weight file from {c_path}...")
                 
+                device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
                 torch.set_num_threads(1)
 
                 # Reconstruct DenseNet121 architecture matching training script
