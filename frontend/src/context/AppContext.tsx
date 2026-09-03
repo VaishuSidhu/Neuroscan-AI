@@ -131,11 +131,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const login = async (email: string, password = 'demo1234'): Promise<User | null> => {
+  const login = async (email: string, password = ''): Promise<User | null> => {
     try {
-      // In demo mode, admin has admin123, doctor has demo1234
-      const pass = email.includes('admin') ? 'admin123' : password;
-      const data = await authApi.login({ email, password: pass });
+      const data = await authApi.login({ email, password });
       localStorage.setItem('neuro_token', data.access_token);
       setCurrentUser(data.user);
       addNotification(`Clinician logged in: ${data.user.name}`);

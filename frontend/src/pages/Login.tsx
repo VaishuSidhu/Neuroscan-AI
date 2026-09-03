@@ -7,7 +7,7 @@ interface LoginProps {
 }
 
 export const Login: React.FC<LoginProps> = ({ setPath }) => {
-  const { login } = useApp();
+  const { login, logout } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'Doctor/Researcher' | 'Admin'>('Doctor/Researcher');
@@ -29,9 +29,19 @@ export const Login: React.FC<LoginProps> = ({ setPath }) => {
         const loggedUser = await login(email, password);
         setLoading(false);
         if (loggedUser) {
-          if (loggedUser.role === 'Admin') {
+          if (role === 'Admin') {
+            if (loggedUser.role !== 'Admin') {
+              logout();
+              setError('Access denied. These credentials do not have Administrator privileges.');
+              return;
+            }
             setPath('#/admin');
           } else {
+            if (loggedUser.role === 'Admin') {
+              logout();
+              setError('Access denied. Administrator accounts must sign in using the Administrator tab.');
+              return;
+            }
             setPath('#/dashboard');
           }
         } else {
@@ -41,7 +51,7 @@ export const Login: React.FC<LoginProps> = ({ setPath }) => {
         setLoading(false);
         setError('Login failed. Check server connection.');
       }
-    }, 800);
+    }, 500);
   };
 
   return (
