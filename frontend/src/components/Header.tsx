@@ -15,20 +15,6 @@ export const Header: React.FC<HeaderProps> = ({ currentPath, setPath }) => {
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  const handleRoleToggle = (role: 'Admin' | 'Doctor/Researcher') => {
-    // Automatically log in with a default email based on role
-    const email = role === 'Admin' ? 'admin@neuroscan.ai' : 's.jenkins@neuroscan.ai';
-    login(email, role);
-    setShowProfileMenu(false);
-    
-    // Redirect to the appropriate dashboard
-    if (role === 'Admin') {
-      setPath('#/admin');
-    } else {
-      setPath('#/dashboard');
-    }
-  };
-
   const formattedTitle = () => {
     const path = currentPath.replace('#/', '');
     if (!path || path === 'landing') return 'Overview';
@@ -43,36 +29,13 @@ export const Header: React.FC<HeaderProps> = ({ currentPath, setPath }) => {
         <h2 className="text-lg font-semibold text-slate-800 tracking-tight capitalize">
           {formattedTitle()}
         </h2>
-        <span className="hidden sm:inline-block px-2 py-0.5 text-[10px] font-medium bg-blue-50 text-blue-600 rounded border border-blue-100">
-          DEMO MODE
+        <span className="hidden sm:inline-block px-2.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase bg-slate-100 text-slate-700 rounded-md border border-slate-200">
+          {currentUser?.role === 'Admin' ? 'ADMIN CONSOLE' : 'DOCTOR PORTAL'}
         </span>
       </div>
 
       {/* Right Controls */}
       <div className="flex items-center space-x-4">
-        {/* Quick Role Toggle Pill */}
-        <div className="hidden md:flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200">
-          <button
-            onClick={() => handleRoleToggle('Doctor/Researcher')}
-            className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
-              currentUser?.role === 'Doctor/Researcher'
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            Doctor View
-          </button>
-          <button
-            onClick={() => handleRoleToggle('Admin')}
-            className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
-              currentUser?.role === 'Admin'
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            Admin View
-          </button>
-        </div>
 
         {/* Notifications Bell */}
         <div className="relative">
@@ -153,33 +116,6 @@ export const Header: React.FC<HeaderProps> = ({ currentPath, setPath }) => {
               <div className="px-4 py-3 bg-slate-50/50">
                 <p className="text-xs font-semibold text-slate-800 truncate">{currentUser?.name}</p>
                 <p className="text-[10px] font-mono text-slate-400 truncate mt-0.5">{currentUser?.email}</p>
-              </div>
-
-              {/* Mobile Role Switcher within Profile Menu */}
-              <div className="block md:hidden px-4 py-2 bg-slate-50/30">
-                <p className="text-[10px] font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">Demo Role Switcher</p>
-                <div className="grid grid-cols-2 gap-1.5 bg-slate-100 p-1 rounded-lg">
-                  <button
-                    onClick={() => handleRoleToggle('Doctor/Researcher')}
-                    className={`py-1 text-[10px] font-medium rounded transition-all ${
-                      currentUser?.role === 'Doctor/Researcher'
-                        ? 'bg-white text-blue-600 shadow-sm'
-                        : 'text-slate-500'
-                    }`}
-                  >
-                    Doctor
-                  </button>
-                  <button
-                    onClick={() => handleRoleToggle('Admin')}
-                    className={`py-1 text-[10px] font-medium rounded transition-all ${
-                      currentUser?.role === 'Admin'
-                        ? 'bg-white text-blue-600 shadow-sm'
-                        : 'text-slate-500'
-                    }`}
-                  >
-                    Admin
-                  </button>
-                </div>
               </div>
 
               <div className="py-1">

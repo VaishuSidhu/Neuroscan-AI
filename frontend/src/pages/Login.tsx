@@ -26,10 +26,10 @@ export const Login: React.FC<LoginProps> = ({ setPath }) => {
 
     setTimeout(async () => {
       try {
-        const success = await login(email, password);
+        const loggedUser = await login(email, password);
         setLoading(false);
-        if (success) {
-          if (role === 'Admin') {
+        if (loggedUser) {
+          if (loggedUser.role === 'Admin') {
             setPath('#/admin');
           } else {
             setPath('#/dashboard');
@@ -47,7 +47,7 @@ export const Login: React.FC<LoginProps> = ({ setPath }) => {
   const handleQuickLogin = (selectedRole: 'Admin' | 'Doctor/Researcher') => {
     const presetEmail = selectedRole === 'Admin' ? 'admin@neuroscan.ai' : 's.jenkins@neuroscan.ai';
     setEmail(presetEmail);
-    setPassword('demo1234');
+    setPassword(selectedRole === 'Admin' ? 'admin123' : 'demo1234');
     setRole(selectedRole);
   };
 

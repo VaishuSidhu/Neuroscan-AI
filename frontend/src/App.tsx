@@ -56,6 +56,8 @@ function App() {
   useEffect(() => {
     if (!currentUser && !isPublic) {
       setPath('#/login');
+    } else if (currentUser && currentUser.role !== 'Admin' && path.startsWith('#/admin')) {
+      setPath('#/dashboard');
     }
   }, [currentUser, path, isPublic]);
 
