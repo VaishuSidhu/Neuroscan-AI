@@ -53,6 +53,7 @@ interface AppContextProps {
   notifications: Array<{ id: string; text: string; time: string; read: boolean }>;
   login: (email: string, password?: string) => Promise<User | null>;
   logout: () => void;
+  updateCurrentUser: (user: User) => void;
   register: (name: string, email: string, role: string, password?: string) => Promise<boolean>;
   addPatient: (patientData: any) => Promise<Patient>;
   uploadAndAnalyze: (patientId: string, scanType: string, file: File, onComplete: (predId: number) => void) => Promise<void>;
@@ -150,6 +151,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setPatients([]);
     setModels([]);
     setUsers([]);
+  };
+
+  const updateCurrentUser = (updatedUser: User) => {
+    setCurrentUser(updatedUser);
   };
 
   const register = async (name: string, email: string, role: string, password = 'demo1234'): Promise<boolean> => {
@@ -299,6 +304,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       notifications,
       login,
       logout,
+      updateCurrentUser,
       register,
       addPatient,
       uploadAndAnalyze,

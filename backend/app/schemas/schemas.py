@@ -25,6 +25,14 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+class ProfileUpdate(BaseModel):
+    name: str
+    email: EmailStr
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str
+
 class UserOut(UserBase):
     id: int
     status: str

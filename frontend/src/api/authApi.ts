@@ -14,5 +14,15 @@ export const authApi = {
   getMe: async () => {
     const response = await axiosInstance.get('/auth/me');
     return response.data;
+  },
+
+  updateProfile: async (profileData: { name: string; email: string }) => {
+    const response = await axiosInstance.put('/auth/profile', profileData);
+    return response.data;
+  },
+
+  changePassword: async (pwdData: { current_password: string; new_password: string }) => {
+    const response = await axiosInstance.post('/auth/change-password', pwdData);
+    return response.data;
   }
 };
