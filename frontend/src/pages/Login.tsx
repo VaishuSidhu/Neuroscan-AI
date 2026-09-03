@@ -44,13 +44,6 @@ export const Login: React.FC<LoginProps> = ({ setPath }) => {
     }, 800);
   };
 
-  const handleQuickLogin = (selectedRole: 'Admin' | 'Doctor/Researcher') => {
-    const presetEmail = selectedRole === 'Admin' ? 'admin@neuroscan.ai' : 's.jenkins@neuroscan.ai';
-    setEmail(presetEmail);
-    setPassword(selectedRole === 'Admin' ? 'admin123' : 'demo1234');
-    setRole(selectedRole);
-  };
-
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200/80 shadow-xl overflow-hidden p-8 flex flex-col space-y-6">
@@ -62,29 +55,6 @@ export const Login: React.FC<LoginProps> = ({ setPath }) => {
           </div>
           <h2 className="text-xl font-bold text-slate-800 tracking-tight">NeuroScan AI Portal</h2>
           <p className="text-xs text-slate-400">Clinical-grade Brain MRI diagnostic platform.</p>
-        </div>
-
-        {/* Demo Fast Login Panel */}
-        <div className="bg-blue-50/50 rounded-xl p-3.5 border border-blue-100/50 flex flex-col space-y-2">
-          <span className="text-[10px] font-bold text-blue-700 tracking-wider uppercase block">
-            DEMO PRE-SETS
-          </span>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('Doctor/Researcher')}
-              className="px-3 py-1.5 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 border border-slate-200 rounded-lg shadow-sm transition-all text-center"
-            >
-              Doctor Credentials
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('Admin')}
-              className="px-3 py-1.5 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 border border-slate-200 rounded-lg shadow-sm transition-all text-center"
-            >
-              Admin Credentials
-            </button>
-          </div>
         </div>
 
         {error && (

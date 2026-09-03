@@ -42,10 +42,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, setPath }) => {
     { name: 'Patient Directory', path: '#/admin/patients', icon: Users },
     { name: 'Model Releases', path: '#/admin/models', icon: Cpu },
     { name: 'System Analytics', path: '#/admin/analytics', icon: LineChart },
+    { name: 'Settings', path: '#/settings', icon: Settings },
   ];
 
   const isLinkActive = (path: string) => {
-    if (path === '#/dashboard' && currentPath === '') return true;
+    if (path === '#/dashboard' && (currentPath === '' || currentPath === '#/')) return true;
     return currentPath === path;
   };
 
@@ -82,18 +83,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, setPath }) => {
 
       {/* Navigation List */}
       <div className="flex-grow overflow-y-auto px-4 py-4 scrollbar-thin">
-        {/* Clinician Section */}
-        <div className="mb-6">
-          <p className="px-4 mb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
-            Diagnostic Modules
-          </p>
-          <nav className="space-y-0.5">
-            {doctorLinks.map(renderLink)}
-          </nav>
-        </div>
-
-        {/* System Administration Section */}
-        {currentUser?.role === 'Admin' && (
+        {currentUser?.role === 'Admin' ? (
+          /* System Administration Section - Exclusively shown for Admins */
           <div className="mb-6">
             <div className="flex items-center px-4 mb-2">
               <ShieldCheck className="w-3.5 h-3.5 text-blue-600 mr-1.5" />
@@ -103,6 +94,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, setPath }) => {
             </div>
             <nav className="space-y-0.5">
               {adminLinks.map(renderLink)}
+            </nav>
+          </div>
+        ) : (
+          /* Clinician Section - Exclusively shown for Doctors/Researchers */
+          <div className="mb-6">
+            <p className="px-4 mb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
+              Diagnostic Modules
+            </p>
+            <nav className="space-y-0.5">
+              {doctorLinks.map(renderLink)}
             </nav>
           </div>
         )}
