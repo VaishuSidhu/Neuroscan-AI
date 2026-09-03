@@ -29,28 +29,33 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const { currentUser, models } = useApp();
   const [historyRows, setHistoryRows] = useState<any[]>([]);
   const [stats, setStats] = useState({
-    totalScans: 1248,
-    totalTumors: 386,
-    totalReports: 742,
-    avgConfidence: 94.2
+    totalScans: 0,
+    totalTumors: 0,
+    totalReports: 0,
+    avgConfidence: 0.0
   });
+  const [dailyAnalyses, setDailyAnalyses] = useState<{ date: string; scans: number }[]>([]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const hist = await analysisApi.getHistory();
+        const [hist, backendStats] = await Promise.all([
+          analysisApi.getHistory(),
+          analysisApi.getStats()
+        ]);
         setHistoryRows(hist);
         
-        // Compute live aggregation totals on top of base mock offset for clinical grade numbers
-        const activeRuns = hist.length;
-        const tumorRuns = hist.filter((h: any) => h.prediction !== 'No Tumor').length;
-        
-        setStats({
-          totalScans: 1248 - 4 + activeRuns,
-          totalTumors: 386 - 3 + tumorRuns,
-          totalReports: 742 - 4 + activeRuns,
-          avgConfidence: 94.2
-        });
+        if (backendStats) {
+          setStats({
+            totalScans: backendStats.total_scans,
+            totalTumors: backendStats.total_tumors,
+            totalReports: backendStats.total_reports,
+            avgConfidence: backendStats.avg_confidence
+          });
+          if (backendStats.daily_analyses) {
+            setDailyAnalyses(backendStats.daily_analyses);
+          }
+        }
       } catch (err) {
         console.error('Failed to load dashboard logs:', err);
       }
@@ -64,16 +69,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
     setPath('#/results');
   };
 
-  // Mock chart data over time
-  const dailyAnalyses = [
-    { date: 'Aug 24', scans: 42 },
-    { date: 'Aug 25', scans: 55 },
-    { date: 'Aug 26', scans: 38 },
-    { date: 'Aug 27', scans: 61 },
-    { date: 'Aug 28', scans: 48 },
-    { date: 'Aug 29', scans: 34 },
-    { date: 'Aug 30', scans: 59 + historyRows.length }
-  ];
+  const positiveRate = stats.totalScans > 0 
+    ? `${((stats.totalTumors / stats.totalScans) * 100).toFixed(1)}%`
+    : '0%';
 
   return (
     <div className="p-6 space-y-6">
@@ -87,7 +85,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Total MRI Scans</span>
             <span className="text-2xl font-bold text-slate-800 tracking-tight font-mono">{stats.totalScans.toLocaleString()}</span>
             <span className="text-[10px] text-emerald-500 font-semibold flex items-center">
-              +12.4% <span className="text-slate-400 font-normal ml-1">vs last month</span>
+              Active Registry <span className="text-slate-400 font-normal ml-1">in database</span>
             </span>
           </div>
           <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
@@ -101,7 +99,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Tumors Localized</span>
             <span className="text-2xl font-bold text-slate-800 tracking-tight font-mono">{stats.totalTumors}</span>
             <span className="text-[10px] text-red-500 font-semibold flex items-center">
-              31.2% <span className="text-slate-400 font-normal ml-1">positive detection rate</span>
+              {positiveRate} <span className="text-slate-400 font-normal ml-1">positive detection rate</span>
             </span>
           </div>
           <div className="w-10 h-10 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
@@ -151,7 +149,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
             <span className="text-[10px] font-medium text-slate-500 flex items-center">
               <Calendar className="w-3.5 h-3.5 mr-1" />
-              Aug 24 - Aug 30
+              Past 7 Days
             </span>
           </div>
           <div className="h-64 w-full">

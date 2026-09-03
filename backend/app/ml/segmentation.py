@@ -116,7 +116,12 @@ def generate_segmentation(file_path: str, predicted_class: str, prediction_id: s
         
         if contours:
             largest_contour = max(contours, key=cv2.contourArea)
-            area = int(cv2.contourArea(largest_contour) * 0.15) # Simulated mm2 scale
+            # Authentic pixel area of segmented lesion contour
+            area = int(round(float(cv2.contourArea(largest_contour))))
+            
+            # Authentic saliency activation confidence
+            activated_pixels = cam[binary_cam > 0]
+            seg_confidence = round(float(np.mean(activated_pixels)), 4) if len(activated_pixels) > 0 else 0.0
             
             M = cv2.moments(largest_contour)
             if M["m00"] > 0:
@@ -137,7 +142,9 @@ def generate_segmentation(file_path: str, predicted_class: str, prediction_id: s
             alpha = 0.25
             cv2.addWeighted(overlay_filled, alpha, overlay_img, 1 - alpha, 0, overlay_img)
             cv2.drawContours(overlay_img, [largest_contour], -1, (0, 0, 255), 2)
-            
+        else:
+            seg_confidence = 0.0
+
         cv2.imwrite(mask_path, mask)
         cv2.imwrite(overlay_path, overlay_img)
         
@@ -146,7 +153,7 @@ def generate_segmentation(file_path: str, predicted_class: str, prediction_id: s
         return {
             "mask_url": f"/api/files/localization/{mask_filename}",
             "overlay_url": f"/api/files/localization/{overlay_filename}",
-            "confidence": 0.85,  # Fixed base confidence for weakly-supervised approach
+            "confidence": seg_confidence,
             "region": region,
             "tumor_area_mm2": area
         }

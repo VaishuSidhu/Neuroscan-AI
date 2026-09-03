@@ -45,8 +45,8 @@ export const Login: React.FC<LoginProps> = ({ setPath }) => {
   };
 
   const handleQuickLogin = (selectedRole: 'Admin' | 'Doctor/Researcher') => {
-    const mockEmail = selectedRole === 'Admin' ? 'admin@neuroscan.ai' : 's.jenkins@neuroscan.ai';
-    setEmail(mockEmail);
+    const presetEmail = selectedRole === 'Admin' ? 'admin@neuroscan.ai' : 's.jenkins@neuroscan.ai';
+    setEmail(presetEmail);
     setPassword('demo1234');
     setRole(selectedRole);
   };

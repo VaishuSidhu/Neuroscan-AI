@@ -27,17 +27,18 @@ try:
                 db.commit()
 
             if db.query(MLModel).count() == 0:
-                logger.info("Seeding baseline ML model releases...")
-                m_cnn = MLModel(name="CNN (Baseline)", version="v1.0", accuracy=0.914, precision=0.908, recall=0.899, f1_score=0.903, auc=0.921, status="Inactive")
-                m_resnet = MLModel(name="ResNet50", version="v2.1", accuracy=0.941, precision=0.937, recall=0.932, f1_score=0.934, auc=0.950, status="Inactive")
-                m_densenet = MLModel(name="DenseNet121", version="v1.2", accuracy=0.952, precision=0.948, recall=0.945, f1_score=0.946, auc=0.961, status="Active")
-                db.add_all([m_cnn, m_resnet, m_densenet])
-                db.commit()
-
-            if db.query(Patient).count() == 0:
-                logger.info("Seeding baseline patient demographics...")
-                p1 = Patient(patient_id="PT-9821", name="Eleanor Vance", age=42, gender="Female", notes="Patient presenting with chronic headaches and light sensitivity.")
-                db.add(p1)
+                logger.info("Registering active DenseNet121 model release with authentic evaluated metrics...")
+                m_densenet = MLModel(
+                    name="DenseNet121", 
+                    version="v1.2", 
+                    accuracy=0.7386, 
+                    precision=0.8033, 
+                    recall=0.7186, 
+                    f1_score=0.7096, 
+                    auc=0.801, 
+                    status="Active"
+                )
+                db.add(m_densenet)
                 db.commit()
                 
         except Exception as e:
@@ -52,6 +53,7 @@ try:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins_list,
+        allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

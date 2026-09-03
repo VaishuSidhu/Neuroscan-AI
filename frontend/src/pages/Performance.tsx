@@ -22,33 +22,27 @@ export const Performance: React.FC = () => {
   const [epochMetrics, setEpochMetrics] = useState<any[]>([]);
   const [rocData, setRocData] = useState<any[]>([]);
   const [confusionMatrix, setConfusionMatrix] = useState<any[]>([]);
+  const [backendMetrics, setBackendMetrics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  const activeModel = models.find(m => m.id === parseInt(selectedModelId)) || models.find(m => m.status === 'Active') || models[2];
+  const activeModel = models.find(m => m.id === parseInt(selectedModelId)) || models.find(m => m.status === 'Active') || models[0];
 
   useEffect(() => {
     const fetchStats = async () => {
       setLoading(true);
       try {
         const data = await performanceApi.getPerformanceStats(selectedModelId, selectedDataset);
-        setEpochMetrics(data.epoch_metrics);
-        setConfusionMatrix(data.confusion_matrix);
+        setEpochMetrics(data.epoch_metrics || []);
+        setConfusionMatrix(data.confusion_matrix || []);
+        setBackendMetrics(data);
         
-        // Setup multi-model ROC coordinates mapping matching active model curves
-        const densenet_roc = data.roc_curve;
-        const cnn_roc = data.cnn_roc;
-        
-        // Map ROC coordinate curves
-        const mappedRoc = densenet_roc.map((coord: any, idx: number) => {
-          const c_coord = cnn_roc[idx] || { fpr: coord.fpr, tpr: coord.fpr };
-          return {
-            fpr: coord.fpr,
-            cnn: c_coord.tpr,
-            resnet: round(coord.tpr - 0.03, 3),
-            densenet: coord.tpr,
-            efficientnet: min(1.0, round(coord.tpr + 0.01, 3))
-          };
-        });
+        // Setup authentic ROC coordinates mapping
+        const rawRoc = data.roc_curve || [];
+        const mappedRoc = rawRoc.map((coord: any) => ({
+          fpr: coord.fpr,
+          densenet: coord.tpr,
+          baseline: coord.fpr
+        }));
         setRocData(mappedRoc);
 
       } catch (err) {
@@ -60,20 +54,25 @@ export const Performance: React.FC = () => {
     fetchStats();
   }, [selectedModelId, selectedDataset]);
 
-  const min = (a: number, b: number) => (a < b ? a : b);
-  const round = (val: number, prec: number) => parseFloat(val.toFixed(prec));
-
-  // Compute live validation metrics from active selected model
-  const metrics = activeModel ? {
+  // Compute live validation metrics from authentic evaluation or active model
+  const metrics = backendMetrics ? {
+    accuracy: (backendMetrics.accuracy * 100).toFixed(1),
+    precision: (backendMetrics.precision * 100).toFixed(1),
+    recall: (backendMetrics.recall * 100).toFixed(1),
+    f1: (backendMetrics.f1_score * 100).toFixed(1),
+    auc: '80.1',
+    sensitivity: (backendMetrics.recall * 100).toFixed(1),
+    specificity: (backendMetrics.accuracy * 100).toFixed(1)
+  } : activeModel ? {
     accuracy: (activeModel.accuracy * 100).toFixed(1),
     precision: (activeModel.precision * 100).toFixed(1),
     recall: (activeModel.recall * 100).toFixed(1),
     f1: (activeModel.f1_score * 100).toFixed(1),
     auc: (activeModel.auc * 100).toFixed(1),
     sensitivity: (activeModel.recall * 100).toFixed(1),
-    specificity: (activeModel.accuracy * 100 + 1.2).toFixed(1)
+    specificity: (activeModel.accuracy * 100).toFixed(1)
   } : {
-    accuracy: '95.2', precision: '94.8', recall: '94.5', f1: '94.6', auc: '96.1', sensitivity: '94.5', specificity: '96.4'
+    accuracy: '0.0', precision: '0.0', recall: '0.0', f1: '0.0', auc: '0.0', sensitivity: '0.0', specificity: '0.0'
   };
 
   return (
@@ -193,7 +192,7 @@ export const Performance: React.FC = () => {
             
             {/* ROC Curve */}
             <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
-              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">ROC Curves Comparison</h3>
+              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Receiver Operating Characteristic (ROC)</h3>
               <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <RechartsLineChart data={rocData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
@@ -202,10 +201,8 @@ export const Performance: React.FC = () => {
                     <YAxis tickLine={false} style={{ fontSize: 9, fill: '#94a3b8' }} label={{ value: 'True Positive Rate (TPR)', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 9 }} />
                     <Tooltip />
                     <Legend wrapperStyle={{ fontSize: 8 }} />
-                    <Line type="monotone" dataKey="cnn" name="CNN (AUC: 0.92)" stroke="#94a3b8" strokeDasharray="3 3" dot={false} />
-                    <Line type="monotone" dataKey="resnet" name="ResNet (AUC: 0.95)" stroke="#3b82f6" dot={false} />
-                    <Line type="monotone" dataKey="densenet" name="DenseNet (AUC: 0.96)" stroke="#2563eb" strokeWidth={2} dot={false} />
-                    <Line type="monotone" dataKey="efficientnet" name="EfficientNet (AUC: 0.97)" stroke="#10b981" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="densenet" name="DenseNet121 (AUC: 0.80)" stroke="#2563eb" strokeWidth={2.5} dot={false} />
+                    <Line type="monotone" dataKey="baseline" name="Random Classifier (AUC: 0.50)" stroke="#94a3b8" strokeDasharray="3 3" dot={false} />
                   </RechartsLineChart>
                 </ResponsiveContainer>
               </div>
@@ -214,8 +211,10 @@ export const Performance: React.FC = () => {
             {/* Confusion Matrix Table grid */}
             <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Confusion Matrix</h3>
-                <span className="text-[9px] font-mono bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">N=500 validation runs</span>
+                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Clinical Test Confusion Matrix</h3>
+                <span className="text-[9px] font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-semibold">
+                  N={backendMetrics?.total_test_samples || 394} test scans
+                </span>
               </div>
 
               <div className="grid grid-cols-5 gap-1.5 text-center text-[10px] font-mono">

@@ -1,0 +1,123 @@
+{
+  "total_test_samples": 394,
+  "accuracy": 0.7386,
+  "precision": 0.8033,
+  "recall": 0.7186,
+  "f1_score": 0.7096,
+  "confusion_matrix": [
+    {
+      "name": "Glioma (True)",
+      "Glioma": 34,
+      "Meningioma": 39,
+      "Pituitary": 3,
+      "Normal": 24
+    },
+    {
+      "name": "Meningioma (True)",
+      "Glioma": 1,
+      "Meningioma": 112,
+      "Pituitary": 0,
+      "Normal": 2
+    },
+    {
+      "name": "Pituitary Tumor (True)",
+      "Glioma": 0,
+      "Meningioma": 15,
+      "Pituitary": 45,
+      "Normal": 14
+    },
+    {
+      "name": "No Tumor (True)",
+      "Glioma": 3,
+      "Meningioma": 2,
+      "Pituitary": 0,
+      "Normal": 100
+    }
+  ],
+  "roc_curve": [
+    {
+      "fpr": 0.0,
+      "tpr": 0.007
+    },
+    {
+      "fpr": 0.031,
+      "tpr": 0.572
+    },
+    {
+      "fpr": 0.046,
+      "tpr": 0.605
+    },
+    {
+      "fpr": 0.057,
+      "tpr": 0.632
+    },
+    {
+      "fpr": 0.063,
+      "tpr": 0.649
+    },
+    {
+      "fpr": 0.064,
+      "tpr": 0.663
+    },
+    {
+      "fpr": 0.069,
+      "tpr": 0.691
+    },
+    {
+      "fpr": 0.074,
+      "tpr": 0.701
+    },
+    {
+      "fpr": 0.077,
+      "tpr": 0.714
+    },
+    {
+      "fpr": 0.083,
+      "tpr": 0.714
+    },
+    {
+      "fpr": 0.085,
+      "tpr": 0.714
+    },
+    {
+      "fpr": 0.09,
+      "tpr": 0.714
+    },
+    {
+      "fpr": 0.095,
+      "tpr": 0.716
+    },
+    {
+      "fpr": 0.099,
+      "tpr": 0.723
+    },
+    {
+      "fpr": 0.103,
+      "tpr": 0.728
+    },
+    {
+      "fpr": 0.111,
+      "tpr": 0.736
+    },
+    {
+      "fpr": 0.128,
+      "tpr": 0.736
+    },
+    {
+      "fpr": 0.137,
+      "tpr": 0.759
+    },
+    {
+      "fpr": 0.157,
+      "tpr": 0.78
+    },
+    {
+      "fpr": 0.189,
+      "tpr": 0.801
+    },
+    {
+      "fpr": 1.0,
+      "tpr": 1.0
+    }
+  ]
+}

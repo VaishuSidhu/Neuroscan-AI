@@ -103,6 +103,43 @@ def run_pipeline(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Diagnostic pipeline execution failed: {str(e)}")
 
+@router.get("/stats")
+def get_dashboard_stats(
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """
+    Computes authentic dashboard metrics dynamically from the database.
+    """
+    from ..models.database_models import Report
+    from sqlalchemy import func
+    from datetime import datetime, timedelta
+
+    total_scans = db.query(MRIScan).count()
+    total_tumors = db.query(Prediction).filter(Prediction.predicted_class != "No Tumor").count()
+    total_reports = db.query(Report).count()
+
+    avg_conf = db.query(func.avg(Prediction.confidence)).scalar()
+    avg_confidence = round(float(avg_conf) * 100, 1) if avg_conf is not None else 0.0
+
+    today = datetime.utcnow().date()
+    days = [(today - timedelta(days=i)) for i in range(6, -1, -1)]
+    daily_analyses = []
+    for d in days:
+        d_str = d.strftime("%b %d")
+        count = db.query(MRIScan).filter(
+            func.date(MRIScan.upload_date) == d.strftime("%Y-%m-%d")
+        ).count()
+        daily_analyses.append({"date": d_str, "scans": count})
+
+    return {
+        "total_scans": total_scans,
+        "total_tumors": total_tumors,
+        "total_reports": total_reports,
+        "avg_confidence": avg_confidence,
+        "daily_analyses": daily_analyses
+    }
+
 @router.get("/history")
 def get_history(
     db: Session = Depends(get_db),
@@ -185,7 +222,7 @@ def get_prediction_detail(
         "localization": {
             "mask_url": f"/api/files/localization/mask_{pred_suffix}",
             "overlay_url": f"/api/files/localization/local_overlay_{pred_suffix}",
-            "confidence": round(p.confidence - 0.03, 3) if p.predicted_class != "No Tumor" else 0.0,
+            "confidence": round(p.confidence, 4) if p.predicted_class != "No Tumor" else 0.0,
             "region": region,
             "tumor_area_mm2": area
         }

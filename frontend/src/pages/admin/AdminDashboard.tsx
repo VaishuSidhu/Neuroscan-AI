@@ -3,7 +3,6 @@ import { useApp } from '../../context/AppContext';
 import { Users, ShieldAlert, Cpu, FileCheck2, Activity, Loader2 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { adminApi } from '../../api/adminApi';
-import { mockSystemStats } from '../../data/mockData';
 
 interface AdminDashboardProps {
   setPath: (path: string) => void;
@@ -31,22 +30,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ setPath }) => {
 
   const COLORS = ['#2563eb', '#f59e0b', '#ef4444', '#10b981'];
 
-  const monthlyVolumeData = [
-    { month: 'Mar', analyses: 142 },
-    { month: 'Apr', analyses: 195 },
-    { month: 'May', analyses: 248 },
-    { month: 'Jun', analyses: 312 },
-    { month: 'Jul', analyses: 280 },
-    { month: 'Aug', analyses: 345 }
-  ];
-
-  // Mock distributions matching historical averages
-  const tumorDistribution = [
-    { name: 'Glioma', value: 45 },
-    { name: 'Meningioma', value: 31 },
-    { name: 'Pituitary Tumor', value: 18 },
-    { name: 'No Tumor', value: 54 }
-  ];
+  // Dynamic monthly volume data and pathology distribution from database
+  const monthlyVolumeData = stats?.monthly_volume || [];
+  const tumorDistribution = stats?.tumor_distribution || [];
 
   if (loading) {
     return (
@@ -91,7 +77,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ setPath }) => {
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between animate-fade-in">
           <div className="space-y-1">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">MRI Analyses</span>
-            <span className="text-xl font-bold text-slate-800 tracking-tight font-mono">{stats?.total_scans || 12}</span>
+            <span className="text-xl font-bold text-slate-800 tracking-tight font-mono">{stats?.total_scans ?? 0}</span>
             <span className="text-[10px] text-emerald-500 font-semibold block">100% processed</span>
           </div>
           <div className="w-9 h-9 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
@@ -103,7 +89,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ setPath }) => {
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between animate-fade-in">
           <div className="space-y-1">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Reports Generated</span>
-            <span className="text-xl font-bold text-slate-800 tracking-tight font-mono">{stats?.total_reports || 4}</span>
+            <span className="text-xl font-bold text-slate-800 tracking-tight font-mono">{stats?.total_reports ?? 0}</span>
             <span className="text-[10px] text-slate-500 font-semibold block">Clinician signed</span>
           </div>
           <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">

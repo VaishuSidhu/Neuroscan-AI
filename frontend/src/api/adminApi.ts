@@ -5,6 +5,11 @@ export const adminApi = {
     const response = await axiosInstance.get('/admin/stats');
     return response.data;
   },
+
+  getSystemMetrics: async () => {
+    const response = await axiosInstance.get('/admin/system-metrics');
+    return response.data;
+  },
   
   getUsers: async () => {
     const response = await axiosInstance.get('/admin/users');

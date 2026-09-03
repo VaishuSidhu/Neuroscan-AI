@@ -7,7 +7,9 @@ export const mriApi = {
     formData.append('scan_type', scanType);
     formData.append('file', file);
     
-    const response = await axiosInstance.post('/mri/upload', formData);
+    const response = await axiosInstance.post('/mri/upload', formData, {
+      headers: { 'Content-Type': undefined }, // Let browser set multipart/form-data + boundary
+    });
     return response.data;
   }
 };

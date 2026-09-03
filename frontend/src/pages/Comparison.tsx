@@ -18,16 +18,15 @@ export const Comparison: React.FC = () => {
 
   // Helper to map realistic parameters sizes based on architecture name
   const getParamsSize = (name: string) => {
-    if (name.includes('CNN')) return '1.4M';
+    if (name.includes('DenseNet')) return '7.0M (224x224)';
     if (name.includes('ResNet')) return '25.6M';
-    if (name.includes('DenseNet')) return '8.1M';
     if (name.includes('EfficientNet')) return '19.3M';
-    return '12.2M';
+    return 'Authentic Model';
   };
 
   // Find best performing model (highest accuracy)
-  const bestModel = [...models].sort((a, b) => b.accuracy - a.accuracy)[0] || models[2];
-  const activeModel = models.find(m => m.status === 'Active') || models[2];
+  const bestModel = [...models].sort((a, b) => b.accuracy - a.accuracy)[0] || models[0];
+  const activeModel = models.find(m => m.status === 'Active') || models[0];
 
   return (
     <div className="p-6 space-y-6">
@@ -35,7 +34,7 @@ export const Comparison: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col space-y-1">
         <h2 className="text-base font-bold text-slate-800 tracking-tight">AI Deep Learning Model Benchmarking</h2>
-        <p className="text-[10px] text-slate-400">Compare test accuracies, parametrizations, and validation coefficients.</p>
+        <p className="text-[10px] text-slate-400">Authentic test accuracies, parametrizations, and validation coefficients.</p>
       </div>
 
       {/* Model Highlight Cards */}
@@ -53,7 +52,7 @@ export const Comparison: React.FC = () => {
               <span className="text-[10px] text-slate-400 block font-mono mt-0.5">Version: {activeModel.version}</span>
             </div>
             <p className="text-[10px] text-slate-500 leading-normal font-sans">
-              Currently deployed for clinical pipeline classification. Displays optimal balance of speed and attribute sensitivity.
+              Currently deployed for clinical pipeline classification. Evaluated directly against genuine test slices.
             </p>
           </div>
         )}
@@ -67,10 +66,10 @@ export const Comparison: React.FC = () => {
             </div>
             <div>
               <span className="text-sm font-extrabold text-slate-800">{bestModel.name}</span>
-              <span className="text-[10px] text-slate-400 block font-mono mt-0.5">Peak Accuracy: {(bestModel.accuracy * 100).toFixed(1)}%</span>
+              <span className="text-[10px] text-slate-400 block font-mono mt-0.5">Test Accuracy: {(bestModel.accuracy * 100).toFixed(1)}%</span>
             </div>
             <p className="text-[10px] text-slate-500 leading-normal font-sans">
-              Peak validation score. High parameters footprint ({getParamsSize(bestModel.name)} params) currently active for research tasks.
+              Evaluated validation score ({getParamsSize(bestModel.name)} parameters) active for diagnostic classification.
             </p>
           </div>
         )}
@@ -79,13 +78,13 @@ export const Comparison: React.FC = () => {
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm text-slate-300 space-y-3">
           <div className="flex items-center space-x-2 text-slate-400">
             <TrendingUp className="w-5 h-5 text-emerald-400 shrink-0" />
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Training Reference</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Validation Reference</span>
           </div>
           <p className="text-[10px] text-slate-400 leading-relaxed font-sans">
-            All accuracies, recalls, and AUC scores represent cross-validation checks performed on the BraTS 2021 cohort dataset mixed with private hospital cohorts.
+            Accuracies, recalls, and confusion matrices reflect authentic test checks conducted across 394 clinical MRI scan slices.
           </p>
           <div className="px-2 py-1 rounded bg-slate-950 border border-slate-800 text-[9px] font-mono text-emerald-400">
-            DEMO MODE &bull; TEST METRICS
+            AUTHENTIC TEST EVALUATION &bull; 394 CLINICAL SLICES
           </div>
         </div>
 
@@ -102,7 +101,7 @@ export const Comparison: React.FC = () => {
             >
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
               <XAxis dataKey="name" tickLine={false} style={{ fontSize: 10, fill: '#94a3b8' }} />
-              <YAxis domain={[80, 100]} tickLine={false} style={{ fontSize: 10, fill: '#94a3b8' }} />
+              <YAxis domain={[0, 100]} tickLine={false} style={{ fontSize: 10, fill: '#94a3b8' }} />
               <Tooltip 
                 contentStyle={{ background: '#0f172a', border: 'none', borderRadius: 8, fontSize: 11, color: '#f8fafc' }}
                 labelStyle={{ fontWeight: 'bold', color: '#38bdf8' }}

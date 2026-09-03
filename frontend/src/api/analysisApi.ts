@@ -30,6 +30,11 @@ export const analysisApi = {
     const response = await axiosInstance.get('/analysis/history');
     return response.data;
   },
+
+  getStats: async () => {
+    const response = await axiosInstance.get('/analysis/stats');
+    return response.data;
+  },
   
   getPredictionDetail: async (id: number) => {
     const response = await axiosInstance.get(`/analysis/prediction/${id}`);
