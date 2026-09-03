@@ -17,7 +17,10 @@ services:
       - key: AI_MODE
         value: production
       - key: CORS_ORIGINS
-        value: "*" 
+        value: "*"
+      - key: MALLOC_ARENA_MAX
+        value: "2"
+    healthCheckPath: /api/health
 
   - type: web
     name: neuroscan-frontend

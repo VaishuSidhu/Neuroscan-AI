@@ -42,8 +42,8 @@ class ModelLoader:
                 from torchvision import models
                 logger.info(f"PyTorch loaded successfully. Reading neural weight file from {c_path}...")
                 
-                device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-                
+                torch.set_num_threads(1)
+
                 # Reconstruct DenseNet121 architecture matching training script
                 model = models.densenet121(weights=None)
                 num_features = model.classifier.in_features
@@ -64,6 +64,11 @@ class ModelLoader:
                 else:
                     model.load_state_dict(checkpoint)
                     self.class_names = ["glioma_tumor", "meningioma_tumor", "no_tumor", "pituitary_tumor"]
+
+                # Free checkpoint dictionary memory immediately
+                del checkpoint
+                import gc
+                gc.collect()
 
                 # Canonical display mapping covering various naming conventions
                 self.class_display = {
